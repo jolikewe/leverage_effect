@@ -2,6 +2,8 @@
 
 Measuring, testing and trading the leverage effect (falling prices raise future volatility) across 5 equity-index and 5 government-bond futures.
 
+**[▶ Live demo](https://jolikewe.github.io/leverage_effect/)**: the study as an interactive, scroll-driven story.
+
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![statsmodels](https://img.shields.io/badge/statsmodels-0.14-informational)
 
