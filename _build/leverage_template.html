@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When prices fall, volatility rises, but only for equities | Leverage Effect in Futures</title>
+<meta name="description" content="Measuring, testing and trading the leverage effect across 5 equity-index and 5 government-bond futures, 1982 to 2017. An interactive research note.">
+<meta property="og:title" content="When prices fall, volatility rises, but only for equities">
+<meta property="og:description" content="The leverage effect across ten futures: measured, tested for significance and stability, and traded with a volatility-targeted strategy.">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#0e1722">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300;1,9..144,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0e1722; --ink2:#131f2d; --ink3:#1b2a3b; --rule:#2a3a4c;
+  --paper:#e9e5da; --mute:#93a0ae; --faint:#5d6b7a;
+  --eq:#f0b24a; --bd:#6f8fb8;
+  --serif:'Fraunces',Georgia,'Times New Roman',serif;
+  --sans:'Instrument Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--serif);font-optical-sizing:auto;font-size:1.125rem;line-height:1.62;font-weight:350;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--eq);outline-offset:3px;border-radius:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 clamp(20px,5vw,64px)}
+.skip{position:absolute;left:-999px;top:8px;background:var(--paper);color:var(--ink);padding:8px 12px;z-index:99;font-family:var(--sans)}
+.skip:focus{left:8px}
+h1,h2,h3{font-weight:300;line-height:1.04;margin:0;letter-spacing:-.02em;font-variation-settings:"opsz" 144}
+h1{font-size:clamp(2.7rem,6.2vw,5.8rem);max-width:14ch;text-wrap:balance}
+.hero-top{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);align-items:end}
+.hero-top .lede{margin:0 0 .6rem}
+h2{font-size:clamp(1.9rem,3.8vw,3.1rem);max-width:20ch;text-wrap:balance}
+h3{font-size:1.35rem;letter-spacing:-.01em;font-weight:400}
+p{margin:0 0 1.1em;max-width:36rem}
+.sans{font-family:var(--sans)}
+em{font-style:italic}
+.eq{color:var(--eq)} .bd{color:var(--bd)}
+.mute{color:var(--mute)}
+nav.top{position:absolute;top:0;left:0;right:0;z-index:5}
+nav.top .wrap{display:flex;justify-content:space-between;align-items:center;padding-top:22px;font-family:var(--sans);font-size:.9rem}
+nav.top a{text-decoration:none;color:var(--mute)}
+nav.top a:hover{color:var(--paper)}
+nav.top .brand{font-family:var(--serif);font-style:italic;font-size:1.05rem;color:var(--paper)}
+
+/* hero */
+.hero{padding:clamp(84px,11vh,120px) 0 40px}
+.hero .lede{font-size:clamp(1.15rem,1.7vw,1.4rem);max-width:40rem;color:#cfd3d4;margin-top:1.6rem;line-height:1.5}
+.hero-fig{margin-top:clamp(28px,5vw,56px)}
+figcaption,.cap{font-family:var(--sans);font-size:.86rem;line-height:1.5;color:var(--mute);max-width:46rem;margin-top:14px}
+.cap b{color:var(--paper);font-weight:500}
+
+/* charts shared */
+.chart{position:relative;width:100%;user-select:none}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart text{font-family:var(--sans);fill:var(--mute);font-size:12px}
+.chart .axis line,.chart .axis path{stroke:var(--rule)}
+.chart .grid{stroke:var(--rule);stroke-opacity:.55;stroke-dasharray:1 4}
+.chart .zero{stroke:var(--faint)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:12px;font-family:var(--sans)}
+.legend .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-right:14px}
+.legend .gname{font-size:.8rem;color:var(--mute);margin-right:2px}
+.chip{appearance:none;background:transparent;border:1px solid var(--rule);color:var(--paper);font:500 .8rem var(--sans);padding:4px 10px 4px 8px;border-radius:99px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .15s,border-color .15s,opacity .2s}
+.chip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.chip:hover,.chip.on{background:var(--ink3);border-color:var(--faint)}
+.chip[aria-pressed=false]{opacity:.45}
+.chip[disabled]{opacity:.3;cursor:not-allowed}
+#tip{position:fixed;z-index:50;pointer-events:none;background:var(--paper);color:var(--ink);font:500 .8rem/1.35 var(--sans);padding:7px 10px;border-radius:3px;opacity:0;transform:translate(-50%,-120%);transition:opacity .12s;white-space:nowrap;box-shadow:0 6px 22px rgba(0,0,0,.4)}
+#tip small{font-weight:400;color:#46515e;display:block}
+#tip.show{opacity:1}
+
+section{padding:clamp(70px,11vw,140px) 0 0}
+.sec-head{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;margin-bottom:40px}
+.q{font-style:italic;font-weight:300;color:var(--eq);font-size:1.2rem;font-variation-settings:"opsz" 144}
+.rule{border:0;border-top:1px solid var(--rule);margin:0}
+
+/* question list */
+.qlist{list-style:none;margin:40px 0 0;padding:0;border-top:1px solid var(--rule);max-width:56rem}
+.qlist li{display:grid;grid-template-columns:3.2rem 1fr;border-bottom:1px solid var(--rule);padding:16px 0}
+.qlist .n{font-style:italic;font-size:1.6rem;color:var(--eq);font-weight:300;line-height:1.2}
+.qlist b{font-weight:600;display:block}
+.qlist span{color:#bcc3c8;font-size:1rem;line-height:1.5}
+.qlist a{text-decoration:none}
+.qlist a:hover b{text-decoration:underline;text-underline-offset:4px}
+
+/* scrolly */
+.scrolly{display:grid;grid-template-columns:minmax(260px,.72fr) minmax(0,1.5fr);gap:clamp(24px,5vw,72px);align-items:start}
+.scrolly .figcol{position:sticky;top:max(5vh,28px);order:2}
+.scrolly .steps{order:1}
+.step{min-height:78vh;display:flex;align-items:center;opacity:.28;transition:opacity .4s}
+.step.active{opacity:1}
+.step:first-child{min-height:60vh}
+.step:last-child{min-height:90vh;align-items:flex-start;padding-top:10vh}
+.step div{max-width:26rem}
+.step h3{margin-bottom:.5em}
+.step p{font-size:1.05rem;color:#d8d8d0;margin-bottom:.8em}
+.step p.small{font-size:.92rem;color:var(--mute);font-family:var(--sans)}
+.kbd{font-style:italic}
+.math{font-style:italic;white-space:nowrap}
+
+/* dot plot */
+.dp{position:relative;font-family:var(--sans);margin-top:10px}
+.dp-ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px;font-size:.88rem;color:var(--mute)}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:99px;padding:2px}
+.seg button{appearance:none;border:0;background:transparent;color:var(--mute);font:500 .85rem var(--sans);padding:5px 14px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--paper);color:var(--ink)}
+.dp-head,.dp-row{display:grid;grid-template-columns:4.6rem minmax(0,1fr) 3.6rem 3.6rem 3.8rem;align-items:center;column-gap:14px}
+.dp-head{font-size:.8rem;color:var(--mute);height:30px;border-bottom:1px solid var(--rule)}
+.dp-head .r,.dp-row .r{text-align:right;font-variant-numeric:tabular-nums}
+.dp-body{position:relative}
+.dp-row{position:absolute;left:0;right:0;height:var(--rh);transition:transform .9s cubic-bezier(.65,0,.25,1);font-size:.95rem}
+.dp-row .nm{font-weight:500}
+.dp-row .nm small{display:block;font-weight:400;font-size:.72rem;color:var(--mute);margin-top:-2px}
+.dp-track{position:relative;height:100%}
+.dp-track:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px solid var(--rule)}
+.dp-dot{position:absolute;top:50%;border-radius:50%;transform:translate(-50%,-50%);transition:left .9s cubic-bezier(.65,0,.25,1),width .9s,height .9s,opacity .5s;box-shadow:0 0 0 3px var(--ink)}
+.dp-ticks{position:absolute;inset:0;pointer-events:none}
+.dp-ticks i{position:absolute;top:0;bottom:0;border-left:1px dotted var(--rule)}
+.dp-ticks b{position:absolute;top:-24px;font-weight:400;font-size:.76rem;color:var(--mute);transform:translateX(-50%)}
+.dp-thr{position:absolute;top:-6px;bottom:-4px;border-left:1.5px dashed var(--paper);pointer-events:none}
+.dp-thr span{position:absolute;top:100%;left:6px;font-size:.78rem;color:var(--paper);white-space:nowrap;margin-top:4px}
+.dp-row.sig .p{color:var(--eq)}
+.dp-grid{position:relative}
+
+/* heat */
+.heat{font-family:var(--sans)}
+.heat svg text{fill:var(--mute);font-size:11.5px;font-family:var(--sans)}
+.heat rect.c{transition:opacity .15s}
+.ramp{display:flex;align-items:center;gap:10px;font:.8rem var(--sans);color:var(--mute);margin-top:14px;flex-wrap:wrap}
+.ramp i{display:block;height:9px;width:180px;border-radius:2px;background:linear-gradient(90deg,#f0b24a,#6b4a1f 32%,#1a2433 50%,#2b4a73 68%,#6f9ad6)}
+
+/* strategy */
+.strat{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:clamp(20px,4vw,56px);align-items:start}
+.ctl{display:flex;flex-wrap:wrap;gap:14px 26px;margin-bottom:16px;font-family:var(--sans)}
+.ctl .lbl{font-size:.8rem;color:var(--mute);display:block;margin-bottom:6px}
+.stats{font-family:var(--sans);width:100%;border-collapse:collapse;font-size:.92rem}
+.stats th{font-weight:400;font-size:.78rem;color:var(--mute);text-align:right;padding:0 0 8px 8px;border-bottom:1px solid var(--rule)}
+.stats th:first-child,.stats td:first-child{text-align:left;padding-left:0}
+.stats td{text-align:right;padding:11px 0 11px 8px;border-bottom:1px solid var(--rule);font-variant-numeric:tabular-nums}
+.stats td:first-child{white-space:nowrap}
+.stats i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:8px;vertical-align:middle}
+.stats tr.best td.sh{color:var(--eq);font-weight:600}
+.stats tr{transition:opacity .3s}
+.note{font-family:var(--sans);font-size:.86rem;color:var(--mute);line-height:1.55;margin-top:18px;max-width:30rem}
+.note b{color:var(--paper);font-weight:500}
+@keyframes drawin{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.sl{stroke-dasharray:1;stroke-dashoffset:0;animation:drawin 1.4s cubic-bezier(.4,0,.2,1) both;fill:none;stroke-linejoin:round;stroke-linecap:round;transition:opacity .3s,stroke-width .2s}
+@media (prefers-reduced-motion:reduce){.sl{animation:none}.step,.dp-row,.dp-dot{transition:none}}
+
+/* method + findings */
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:34px 48px}
+.cols h3{margin-bottom:.4em}
+.cols p{font-size:1rem;color:#cfd3d4;margin:0}
+.cols .f{font-family:var(--serif);color:var(--paper)}
+.find{display:grid;grid-template-columns:minmax(0,1fr);border-top:1px solid var(--rule)}
+.find>div{display:grid;grid-template-columns:minmax(0,13rem) minmax(0,1fr);gap:8px 40px;padding:22px 0;border-bottom:1px solid var(--rule)}
+.find h3{font-size:1.15rem;line-height:1.25}
+.find p{margin:0;max-width:46rem;color:#d3d6d4;font-size:1.04rem}
+.find .q{display:block;font-size:1rem;margin-bottom:2px}
+
+.links{margin-top:30px;display:flex;gap:14px;flex-wrap:wrap;font-family:var(--sans)}
+.btn{display:inline-block;padding:13px 24px;border-radius:99px;text-decoration:none;font-weight:500;font-size:.98rem}
+.btn.main{background:var(--eq);color:#1b1305}
+.btn.main:hover{background:#f6c471}
+.btn.ghost{border:1px solid var(--faint)}
+.btn.ghost:hover{background:var(--ink3)}
+footer{margin-top:clamp(80px,12vw,150px);border-top:1px solid var(--rule);padding:28px 0 46px;font-family:var(--sans);font-size:.88rem;color:var(--mute)}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.refs{font-size:.86rem;max-width:44rem;line-height:1.55;margin-top:28px;color:var(--mute);font-family:var(--sans)}
+
+@media (max-width:860px){
+  .hero-top{grid-template-columns:minmax(0,1fr)}
+  .scrolly .steps{order:1}
+  body{font-size:1.05rem}
+  .scrolly{grid-template-columns:minmax(0,1fr);gap:0}
+  .scrolly .figcol{order:0;position:sticky;top:0;z-index:4;background:var(--ink);padding:10px 0 6px;margin:0 calc(-1*clamp(20px,5vw,64px));padding-inline:clamp(20px,5vw,64px);border-bottom:1px solid var(--rule)}
+  .scrolly .figcol .legend{display:none}
+  .step{min-height:62vh;align-items:flex-start;padding-top:8vh}
+  .step:first-child{min-height:50vh}
+  .strat{grid-template-columns:minmax(0,1fr)}
+  .find>div{grid-template-columns:minmax(0,1fr)}
+  .dp-head,.dp-row{grid-template-columns:3rem minmax(0,1fr) 2.7rem 3.1rem 2.6rem;column-gap:4px}
+  .dp-row .nm small{display:none}
+  .dp-row{font-size:.8rem}.dp-head span:first-child{visibility:hidden}.dp-row .p{font-size:.78rem}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<nav class="top" aria-label="Page"><div class="wrap">
+  <span class="brand">Leverage effect in futures</span>
+  <a href="https://github.com/jolikewe/leverage_effect">Source on GitHub</a>
+</div></nav>
+
+<main id="main">
+<header class="hero"><div class="wrap">
+  <div class="hero-top"><h1>When prices fall, volatility rises — but only for equities.</h1>
+  <p class="lede">Ten anonymised futures, 1982 to 2017. Five behave like equity indices and show a leverage effect that is large, significant and lasts a month. The five that look like government bonds mostly show none.</p></div>
+  <figure class="hero-fig" style="margin-inline:0">
+    <div class="chart" id="heroChart"></div>
+    <figcaption><b>Leverage correlation L(τ)</b> for every instrument. Right of zero, a day's return is paired with squared returns τ days later: for equities that pairing is strongly negative, so falls are followed by rougher markets. Left of zero, the reverse pairing, volatility first and return later, scatters around zero with no systematic dip. Hover or tap a line to isolate it.</figcaption>
+  </figure>
+</div></header>
+
+<section id="about" style="padding-top:clamp(50px,7vw,90px)"><div class="wrap">
+  <div class="sec-head">
+    <h2>One effect, five questions</h2>
+    <p>The leverage effect says that a price fall is followed by higher volatility than a price rise of the same size. The data set holds daily returns of ten futures labelled <span class="math">INST0</span> to <span class="math">INST9</span>; what each one is was never given, so the study first works it out from behaviour alone.</p>
+  </div>
+  <ol class="qlist">
+    <li><span class="n">1</span><a href="#q1"><b>Measurement</b><span>Which instruments show a leverage effect? This also reveals the equity indices.</span></a></li>
+    <li><span class="n">2</span><a href="#q2"><b>Significance and stability</b><span>Is it distinguishable from chance, and does it hold in every calendar year?</span></a></li>
+    <li><span class="n">3</span><a href="#findings"><b>Direction</b><span>Do returns predict volatility, or does volatility predict returns?</span></a></li>
+    <li><span class="n">4</span><a href="#findings"><b>Spillover</b><span>Do equity moves change bond volatility, or the reverse?</span></a></li>
+    <li><span class="n">5</span><a href="#q5"><b>Strategy</b><span>Does a better volatility forecast make a volatility-targeted long book earn more?</span></a></li>
+  </ol>
+</div></section>
+
+<!-- Q1 -->
+<section id="q1"><div class="wrap">
+  <div class="sec-head">
+    <span class="q">Question 1</span>
+    <h2>Measure it, and the equities identify themselves</h2>
+  </div>
+  <div class="scrolly" id="scrolly1">
+    <div class="steps">
+      <div class="step" data-step="0"><div>
+        <h3>A correlation with a time lag</h3>
+        <p>Each return is divided by the instrument's trailing one-year volatility so that quiet and wild markets are comparable. Then <span class="math">L(τ) = cov(x<sub>t</sub>, x²<sub>t+τ</sub>) / ⟨x²⟩²</span> asks: when today's return is lower, is the squared return τ days later higher?</p>
+        <p>For the five equity indices the answer is yes, and loudly. On the first day after the move, <span class="math">L(1)</span> is −0.244 for INST5, −0.316 for INST7 and −0.272 for INST9.</p>
+      </div></div>
+      <div class="step" data-step="1"><div>
+        <h3>Bonds barely register</h3>
+        <p>Same formula, same scale, five other instruments. Four of them sit close to zero, with <span class="math">L(1)</span> between −0.011 and −0.092. A government bond falling in price is just a yield rising; there is no forced selling or panic to feed volatility.</p>
+        <p>One of them, INST2, stands apart. Keep an eye on it.</p>
+      </div></div>
+      <div class="step" data-step="2"><div>
+        <h3>Add up a month</h3>
+        <p>Summing <span class="math">L(τ)</span> over the next 22 trading days gives a single score, <span class="math">S</span>. The lines now accumulate, and the two families pull apart: equities end between −1.9 and −3.1, four of the bonds between −0.2 and −0.45.</p>
+        <p class="small">Fitting each curve to an exponential decay gives an amplitude near 0.18 to 0.32 and a decay time of 8 to 14 days for the equities.</p>
+      </div></div>
+      <div class="step" data-step="3"><div>
+        <h3>INST2 behaves like an equity that forgets faster</h3>
+        <p>Its <span class="math">S</span> of −1.292 is the only bond-labelled score that is clearly significant, and its curve starts at −0.188. But the effect fades in about 6 days, where equities need 8 to 14.</p>
+        <p class="small">It is still no equity: its yearly S is negative in only 62% of calendar years, as shown further down.</p>
+      </div></div>
+    </div>
+    <div class="figcol">
+      <div class="chart" id="q1Chart"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- Q2 -->
+<section id="q2"><div class="wrap">
+  <div class="sec-head">
+    <span class="q">Question 2</span>
+    <h2>Five clear of the line, five that are not</h2>
+    <p>To test against chance, each series is rebuilt a thousand times with its magnitudes kept and its signs flipped at random. That destroys any link between direction and later volatility. The spread of S in those fakes turns the real S into a z-score, <span class="math">z = S / σ<sub>null</sub></span>. The leverage hypothesis is directional (S below zero), so the test is one-sided; with ten instruments tested, a Bonferroni threshold of p ≤ 0.005 (z below −2.58) keeps the false-alarm rate in check.</p>
+  </div>
+  <div class="dp" id="dp">
+    <div class="dp-ctl"><span>Dot position is |z|, dot area is |S|. Rank by</span>
+      <div class="seg" role="group" aria-label="Rank by"><button aria-pressed="true" data-k="S">Cumulative leverage S</button><button aria-pressed="false" data-k="z">Significance |z|</button></div>
+    </div>
+    <div class="dp-head"><span>Instrument</span><span></span><span class="r">z</span><span class="r">S</span><span class="r" title="One-sided p-value for S below zero">p</span></div>
+    <div class="dp-grid"><div class="dp-body" id="dpBody"></div></div>
+  </div>
+  <p class="cap" style="margin-top:46px">All five equity indices reject "no leverage effect": z between −5.0 and −6.3, and p at the permutation floor of 1/1001. INST2 also clears the line at z = −3.54. INST4 (one-sided p = 0.010) and INST0 (p = 0.026) do not clear the Bonferroni threshold, and the other two bonds are well short. A two-sided test, which would also catch bonds moving the other way, gives the same verdicts.</p>
+</div></section>
+
+<!-- Stability -->
+<section id="stability"><div class="wrap">
+  <div class="sec-head">
+    <h2>Stable across years, only where it should be</h2>
+    <p>S is recomputed inside each calendar year, scaled by the full-sample variance so that calm years are not made to look extreme. Non-overlapping years keep the checks independent. Each column below is one year; amber means falls were followed by higher volatility.</p>
+  </div>
+  <div class="heat chart" id="heat"></div>
+  <div class="ramp"><span>S &lt; 0, leverage effect</span><i></i><span>S &gt; 0, the opposite</span><span style="margin-left:auto">Colour is capped at ±6; hover for exact values.</span></div>
+  <p class="cap" style="margin-top:28px">The equity indices have S below zero in 89 to 100% of calendar years (INST5 and INST8 in every one). Each equity index passes an exact sign test (p ≤ 2×10⁻⁵). The bonds sit between 56 and 68%, close to a coin toss. Nothing trends: with only 16 to 34 years per instrument, no slope is significant under small-sample tests (HC3 t-test, permutation, Mann-Kendall; all p above 0.07).</p>
+</div></section>
+
+<!-- Q5 -->
+<section id="q5"><div class="wrap">
+  <div class="sec-head">
+    <span class="q">Question 5</span>
+    <h2>Trade it: a better forecast, a modest gain</h2>
+    <p>A long-only book is sized each day to a 10% volatility target using one of four forecasts, walk-forward from 1995 to 2017 and net of trading costs. Switch the book and the forecasts, and drag across the chart to read off any date. Five further ideas, fixed in advance and then tested against HAR, can be switched on as research variants; none of them wins.</p>
+  </div>
+  <div class="strat">
+    <div>
+      <div class="ctl">
+        <div><span class="lbl">Book</span>
+          <div class="seg" id="bookSeg" role="group" aria-label="Book">
+            <button data-b="EQ" aria-pressed="false">Equities</button>
+            <button data-b="BD" aria-pressed="false">Bonds</button>
+            <button data-b="ALL" aria-pressed="true">All ten legs</button>
+          </div></div>
+        <div><span class="lbl">Sizing model</span>
+          <div id="modelChips" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
+        <div><span class="lbl">Research variants (tested, not adopted)</span>
+          <div id="researchChips" style="display:flex;gap:6px;flex-wrap:wrap"></div></div>
+      </div>
+      <div class="chart" id="sChart"></div>
+      <p class="cap">Cumulative net P&amp;L as a share of account equity, from the notebook's own backtest, with each book at its 10% volatility target. Equities are the five indices; bonds the five government-bond futures.</p>
+    </div>
+    <div>
+      <div style="overflow-x:auto"><table class="stats" id="stats" aria-live="polite"><thead><tr><th>Model</th><th>Return %/yr</th><th>Vol %/yr</th><th>Sharpe</th><th>Max DD %</th><th title="Block-bootstrap p-value of the Sharpe gap against HAR in the same book">p vs HAR</th></tr></thead><tbody></tbody></table></div>
+      <p class="note"><b>Read the Sharpe column with care.</b> Better forecasts beat trailing volatility on forecast accuracy (QLIKE, p below 1e-10), but not convincingly on P&amp;L: on the full book, HAR against trailing volatility has bootstrap p = 0.055, HAR-lev scores below HAR (p = 0.030), and trend against HAR is p = 0.86. These are single comparisons; after a Holm correction across the eight Sharpe comparisons none is below 0.05. What the trend overlay reliably does is cut the drawdown, from −43.0% to −13.1% for equities. Most of the Sharpe comes from bonds and their −0.26 correlation with equities.</p>
+      <p class="note" id="bdnote" hidden>For bonds the HAR-lev sizing is identical to HAR, because only equities receive the leverage terms. H4 and H5 also leave bonds on HAR, and H1 is defined for the all-legs book only, so those chips are disabled here.</p>
+      <p class="note"><b>Strategy research.</b> Five hypotheses drawn from the study's findings were written down and committed before any was run, then tested with the same walk-forward design, costs, band and 1995 start. None beats HAR: the best scores 1.007 against 1.018, and after Holm correction across the five tests no p-value is below 0.155. HAR stays the baseline.</p>
+    </div>
+  </div>
+  <div class="rtable" style="margin-top:clamp(28px,4vw,48px)">
+    <h3 style="font:600 1.05rem var(--sans);margin:0 0 .6rem">Research variants on the all-legs book, 1995 to 2017</h3>
+    <div style="overflow-x:auto"><table class="stats" id="rstats" aria-label="Strategy research variants against the HAR baseline"><thead><tr><th>Variant</th><th>Sharpe</th><th>Max DD %</th><th>Turnover</th><th>Sharpe 1995–2006</th><th>Sharpe 2007–2017</th><th>Sharpe, costs ×2</th><th>p vs HAR</th><th>p Holm</th></tr></thead><tbody></tbody></table></div>
+    <p class="note">Bootstrap: 21-day blocks, 1000 resamples. Holm correction across the five p-values. H5's p = 0.031 is for a Sharpe below HAR's. The Deflated Sharpe Ratio (N = 40 trials, counting every configuration tried in the project notes) is 1.000 for every strategy including HAR, so it does not separate them. Adoption required Holm p below 0.05, a higher Sharpe in both sub-periods and at doubled costs, and a max drawdown no more than 2 points worse; no variant meets those conditions.</p>
+  </div>
+</div></section>
+
+<!-- Method -->
+<section id="method"><div class="wrap">
+  <div class="sec-head"><h2>Method in brief</h2></div>
+  <div class="cols">
+    <div><h3>Normalise</h3><p>Returns are divided by the lagged 252-day rolling volatility, so every instrument sits on one scale and no lookahead enters.</p></div>
+    <div><h3>Leverage correlation</h3><p><span class="math">L(τ) = cov(x<sub>t</sub>, x²<sub>t+τ</sub>) / ⟨x²⟩²</span>, summed over τ = 1 to 22 to give S. Significance comes from a one-sided test against 1000 sign-flip surrogates.</p></div>
+    <div><h3>Direction</h3><p>Next-5-day variance is regressed on daily, weekly and monthly realised variance (HAR) plus the return and its absolute value, with Newey-West errors. A reverse regression tests volatility to returns.</p></div>
+    <div><h3>Strategy</h3><p>Position equals a 10% target divided by forecast volatility, with a 20% rebalancing band, next-close trading and half-spread costs of 1bp for equities and 0.5bp for bonds. Trend votes use 1, 3 and 12-month lookbacks.</p></div>
+    <div><h3>Comparison</h3><p>Forecasts are scored by QLIKE and compared with a Diebold-Mariano test. Sharpe differences use a 21-day block bootstrap.</p></div>
+  </div>
+</div></section>
+
+<!-- Findings -->
+<section id="findings"><div class="wrap">
+  <div class="sec-head"><h2>Key findings</h2></div>
+  <div class="find">
+    <div><h3><span class="q">1 and 2</span>Equities carry it, bonds do not</h3><p>All five equity indices reject the null (one-sided p at the 0.001 floor, below the Bonferroni 0.005) and have S below zero in 89 to 100% of calendar years. INST2 reacts like an equity but fades in about 6 days instead of 8 to 14; the other bonds show no stable effect.</p></div>
+    <div><h3><span class="q">3</span>Returns lead volatility</h3><p>For every equity index, the return coefficient on next-week variance is negative (gamma from −0.251 to −0.145, p below 1e-4) after controlling for past variance, with and without the 1987 and 2008 crisis windows. Past volatility does not predict returns, apart from INST9.</p></div>
+    <div><h3><span class="q">4</span>A small spillover, one way</h3><p>Equity falls raise next-week bond variance slightly (basket theta = −0.054, p = 0.018; modest evidence that does not survive a study-wide correction). Bond returns do not predict equity volatility (basket p = 0.56).</p></div>
+    <div><h3><span class="q">5</span>Forecast accuracy is not P&amp;L</h3><p>HAR cuts QLIKE against trailing volatility (equities 0.518 to 0.397, bonds 0.400 to 0.342), and leverage terms help equities again (0.385). The Sharpe of the full book goes 0.916, 1.018, 0.990 and 1.044 across the four sizings, but none of those gaps is convincingly significant.</p></div>
+  </div>
+  <div class="links">
+    <a class="btn main" href="https://github.com/jolikewe/leverage_effect">View the repository on GitHub</a>
+    <a class="btn ghost" href="https://github.com/jolikewe/leverage_effect/blob/main/notebooks/leverage_effect.ipynb">Read the notebook</a>
+  </div>
+  <p class="refs">Method follows Bouchaud, Matacz and Potters (2001), <em>Leverage effect in financial markets: the retarded volatility model</em>; Corsi and Renò (2012), <em>Discrete-time volatility forecasting with persistent leverage effect</em>; and Patton (2011), <em>Volatility forecast comparison using imperfect volatility proxies</em>. Asset classes are inferred from behaviour; the data labels do not give them. All figures on this page are computed from the repository's data and notebook.</p>
+</div></section>
+</main>
+<footer><div class="wrap"><span>Jovi · 2026</span><a href="https://github.com/jolikewe/leverage_effect">github.com/jolikewe/leverage_effect</a></div></footer>
+<div id="tip" role="tooltip"></div>
+
+<script id="data" type="application/json">/*DATA*/</script>
+<script>
+(()=>{
+const D=JSON.parse(document.getElementById('data').textContent);
+const NS='http://www.w3.org/2000/svg';
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const EQ=D.eq,BD=D.bd,ALL=[...EQ,...BD];
+const EQC=['#f6c667','#f0b24a','#e89b3c','#f3d79a','#d9822b'],BDC=['#6f8fb8','#8aa6c9','#5a78a0','#a4b9d3','#4e6a8f'];
+const COL={};EQ.forEach((c,i)=>COL[c]=EQC[i]);BD.forEach((c,i)=>COL[c]=BDC[i]);
+const cls=c=>EQ.includes(c)?'equity':'bond';
+const fmt=(v,d=3)=>(v<0?'−':'')+Math.abs(v).toFixed(d);
+const el=(n,a={},p)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const tip=document.getElementById('tip');
+function showTip(x,y,html){tip.innerHTML=html;tip.style.left=x+'px';tip.style.top=y+'px';tip.classList.add('show')}
+function hideTip(){tip.classList.remove('show')}
+function niceTicks(a,b,n){const span=b-a,raw=span/n,p=Math.pow(10,Math.floor(Math.log10(raw)));const m=[1,2,2.5,5,10].find(k=>k*p>=raw)*p;const out=[];for(let v=Math.ceil(a/m-1e-9)*m;v<=b+1e-9;v+=m)out.push(Math.abs(v)<1e-9?0:+v.toFixed(6));return out}
+
+/* ---------- Leverage-correlation chart ---------- */
+function LChart(root,o){
+  const T=D.taus,i0=T.indexOf(o.xmin),i1=T.indexOf(o.xmax);
+  const X=T.slice(i0,i1+1);
+  const Lv={},Sv={};
+  ALL.forEach(c=>{Lv[c]=D.L[c].slice(i0,i1+1);let s=0;Sv[c]=X.map((t,i)=>{if(t>=1)s+=Lv[c][i];return s})});
+  const ext=(src)=>{let a=0,b=0;ALL.forEach(c=>src[c].forEach(v=>{a=Math.min(a,v);b=Math.max(b,v)}));return[a,b]};
+  const [la,lb]=ext(Lv),[sa,sb]=ext(Sv);
+  const dL=[la*1.06,Math.max(lb*1.1,0.02)],dS=[sa*1.04,Math.max(sb,0)+0.1];
+  root.innerHTML='<svg role="img" aria-label="'+o.label+'"></svg><div class="legend"></div>';
+  const svg=root.querySelector('svg'),legend=root.querySelector('.legend');
+  const st={m:0,dim:0};ALL.forEach(c=>{st['op:'+c]=0;st['rv:'+c]=0});
+  let hl=null,hlc=null,force=null,W=0,H=0,M,paths={},labels={},gAxes,gLines,gLab,hov,hovDot;
+  const mg={l:50,r:o.endLabels?64:14,t:o.xmin<0?28:12,b:38};
+  function build(){
+    W=root.clientWidth;H=Math.round(clamp(W*(o.ratio||.5),230,o.maxH||520));
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('height',H);svg.innerHTML='';
+    gAxes=el('g',{},svg);gLines=el('g',{},svg);gLab=el('g',{},svg);
+    hovDot=el('circle',{r:4.5,fill:'#e9e5da',stroke:'#0e1722','stroke-width':2,opacity:0},svg);
+    paths={};labels={};
+    ALL.forEach(c=>{paths[c]=el('path',{fill:'none','stroke-linejoin':'round',pathLength:1,stroke:COL[c],'stroke-linecap':'butt'},gLines)});
+    ALL.forEach(c=>{labels[c]=el('text',{'font-weight':600,fill:COL[c],'font-size':12},gLab);labels[c].textContent=c;labels[c].style.fill=COL[c]});
+    draw();
+  }
+  const xs=t=>mg.l+(t-o.xmin)/(o.xmax-o.xmin)*(W-mg.l-mg.r);
+  const yl=v=>mg.t+(dL[1]-v)/(dL[1]-dL[0])*(H-mg.t-mg.b);
+  const ys=v=>mg.t+(dS[1]-v)/(dS[1]-dS[0])*(H-mg.t-mg.b);
+  const yy=(c,i)=>(1-st.m)*yl(Lv[c][i])+st.m*ys(Sv[c][i]);
+  function axes(){
+    gAxes.innerHTML='';const bt=H-mg.b;
+    const xt=o.xticks;xt.forEach(t=>{el('line',{x1:xs(t),x2:xs(t),y1:mg.t,y2:bt,class:'grid'},gAxes);const tx=el('text',{x:xs(t),y:bt+18,'text-anchor':'middle'},gAxes);tx.textContent=t});
+    const xl=el('text',{x:(mg.l+W-mg.r)/2,y:H-4,'text-anchor':'middle'},gAxes);xl.textContent='τ, trading days';
+    [[dL,yl,1-st.m,.2],[dS,ys,st.m,1]].forEach(([dom,f,op,step])=>{
+      if(op<.02)return;const g=el('g',{opacity:op},gAxes);
+      niceTicks(dom[0],dom[1],5).forEach(v=>{el('line',{x1:mg.l,x2:W-mg.r,y1:f(v),y2:f(v),class:'grid'},g);const t=el('text',{x:mg.l-8,y:f(v)+4,'text-anchor':'end'},g);t.textContent=v===0?'0':fmt(v,step<1?2:1)});
+      const lab=el('text',{x:0,y:0,transform:`translate(12 ${(mg.t+bt)/2}) rotate(-90)`,'text-anchor':'middle'},g);lab.textContent=dom===dL?'L(τ)':'S(τ), running sum of L';
+    });
+    const y0=(1-st.m)*yl(0)+st.m*ys(0);el('line',{x1:mg.l,x2:W-mg.r,y1:y0,y2:y0,class:'zero'},gAxes);
+    if(o.xmin<0){const x0=xs(0);el('line',{x1:x0,x2:x0,y1:mg.t,y2:bt,class:'zero'},gAxes);
+      const a=el('text',{x:x0+8,y:mg.t+12},gAxes);a.textContent='returns lead volatility →';
+      const b=el('text',{x:x0-8,y:mg.t+12,'text-anchor':'end'},gAxes);b.textContent='← volatility leads returns'}
+  }
+  function draw(){
+    if(!W)return;axes();
+    const dimF=st.dim,ends=[];
+    ALL.forEach(c=>{
+      const p=paths[c],op=st['op:'+c],rv=st['rv:'+c];
+      let pts='';X.forEach((t,i)=>{pts+=(i?'L':'M')+xs(t).toFixed(1)+' '+yy(c,i).toFixed(1)});
+      p.setAttribute('d',pts);
+      const isH=hlc===c,dim=hlc&&!isH?1-.86*dimF:1;
+      p.setAttribute('stroke-opacity',(op*dim*(isH?1:(EQ.includes(c)?.95:.6))).toFixed(3));
+      p.setAttribute('stroke-width',isH?2.2+dimF*1.2:(EQ.includes(c)?2:1.3));
+      p.setAttribute('stroke-dasharray',rv>=.999?'none':`${rv.toFixed(4)} 1`);
+      p.setAttribute('stroke-dashoffset',0);
+      if(o.endLabels&&op>.3&&rv>.97){const i=X.length-1;ends.push({c,y:yy(c,i),op:op*dim*st.m})}else labels[c].setAttribute('opacity',0);
+    });
+    ends.sort((a,b)=>a.y-b.y);let prev=-99;ends.forEach(e=>{e.ly=Math.max(e.y,prev+13);prev=e.ly});
+    ends.forEach(e=>{const t=labels[e.c];t.setAttribute('x',W-mg.r+8);t.setAttribute('y',e.ly+4);t.setAttribute('opacity',e.op.toFixed(2))});
+  }
+  /* tween */
+  let raf=0;
+  function to(target,ms,delays={}){
+    cancelAnimationFrame(raf);const from={...st};
+    if(RM||!ms){Object.assign(st,target);draw();return}
+    const t0=performance.now();
+    (function step(now){
+      const t=now-t0;let done=true;
+      for(const k in target){const d=delays[k]||0,dur=ms;const e=ease(clamp((t-d)/dur,0,1));if(t-d<dur)done=false;st[k]=from[k]+(target[k]-from[k])*e}
+      draw();if(!done)raf=requestAnimationFrame(step)})(t0);
+  }
+  /* step config */
+  function setScene(sc){
+    const tg={m:sc.m||0},dl={};
+    ALL.forEach((c,i)=>{const on=sc.show.includes(c);tg['op:'+c]=on?1:0;tg['rv:'+c]=on?1:0;if(on&&st['rv:'+c]<.5)dl['rv:'+c]=(sc.stagger||0)*(sc.show.indexOf(c));
+      if(!on&&st['rv:'+c]>0&&!sc.keep)tg['rv:'+c]=0});
+    force=sc.force||null;hl=force;if(force)hlc=force;tg.dim=force?1:0;
+    legend.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',b.dataset.c===hl));
+    to(tg,sc.ms||1100,dl);if(!force)setTimeout(()=>{if(!hl){hlc=null;draw()}},(sc.ms||1100)+50);
+  }
+  function setHl(c,noAnim){
+    const target=c||force;
+    if(target===hl&&!noAnim)return;
+    hl=target;
+    if(hl){hlc=hl;st.dim=st.dim;to({dim:1},noAnim?500:250)}else{to({dim:0},300);setTimeout(()=>{if(!hl){hlc=null;draw()}},320)}
+    legend.querySelectorAll('.chip').forEach(b=>b.classList.toggle('on',b.dataset.c===hl));
+  }
+  /* legend */
+  [['Equities',EQ],['Bonds',BD]].forEach(([n,list])=>{
+    const g=document.createElement('div');g.className='grp';g.innerHTML=`<span class="gname">${n}</span>`;
+    list.forEach(c=>{const b=document.createElement('button');b.className='chip';b.dataset.c=c;b.innerHTML=`<i style="background:${COL[c]}"></i>${c}`;
+      b.addEventListener('mouseenter',()=>setHl(c));b.addEventListener('mouseleave',()=>setHl(null));
+      b.addEventListener('focus',()=>setHl(c));b.addEventListener('blur',()=>setHl(null));
+      b.addEventListener('click',()=>setHl(hl===c?null:c));g.appendChild(b)});legend.appendChild(g)});
+  /* hover */
+  svg.addEventListener('pointermove',e=>{
+    const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width),py=(e.clientY-r.top)*(H/r.height);
+    const tau=clamp(Math.round(o.xmin+(px-mg.l)/(W-mg.l-mg.r)*(o.xmax-o.xmin)),o.xmin,o.xmax),i=X.indexOf(tau);
+    let best=null,bd=30;
+    ALL.forEach(c=>{if(st['op:'+c]<.4||st['rv:'+c]<.9)return;const d=Math.abs(yy(c,i)-py);if(d<bd){bd=d;best=c}});
+    if(best){setHl(best);const v=st.m>.5?Sv[best][i]:Lv[best][i];
+      hovDot.setAttribute('cx',xs(tau));hovDot.setAttribute('cy',yy(best,i));hovDot.setAttribute('opacity',1);
+      showTip(e.clientX,e.clientY-4,`${best}, ${cls(best)}<small>${st.m>.5?'S('+tau+')':'L('+tau+')'} = ${fmt(v)}</small>`)}
+    else{hovDot.setAttribute('opacity',0);hideTip();if(hl&&hl!==force)setHl(null)}
+  });
+  svg.addEventListener('pointerleave',()=>{hovDot.setAttribute('opacity',0);hideTip();setHl(null)});
+  new ResizeObserver(()=>{if(root.clientWidth!==W)build()}).observe(root);
+  build();
+  return {setScene,to,st};
+}
+
+/* hero: full range, draw in on load */
+const hero=LChart(document.getElementById('heroChart'),{xmin:-22,xmax:60,xticks:[-20,0,20,40,60],ratio:.42,maxH:480,label:'Leverage correlation curves for ten futures. Equities dip strongly negative after day zero; bonds stay near zero.'});
+hero.setScene({show:ALL,m:0,ms:2200,stagger:140});
+
+/* Q1 scrolly */
+const q1=LChart(document.getElementById('q1Chart'),{xmin:1,xmax:22,xticks:[1,5,10,15,20,22],ratio:.78,maxH:560,endLabels:true,label:'Leverage correlation and its cumulative sum over 22 days for ten futures'});
+const scenes=[
+ {show:EQ,m:0,stagger:160,ms:1400},
+ {show:ALL,m:0,stagger:120,ms:1200},
+ {show:ALL,m:1,ms:1500},
+ {show:ALL,m:1,force:'INST2',ms:600}
+];
+const steps=[...document.querySelectorAll('#scrolly1 .step')];
+let cur=-1,ticking=false;
+function pick(){
+  ticking=false;const vh=innerHeight,line=(innerWidth<=860?.78:.5)*vh;let best=0,bd=1e9;
+  steps.forEach((s,i)=>{const r=s.getBoundingClientRect();const d=r.top>line?r.top-line:(r.bottom<line?line-r.bottom:0);const dd=Math.abs((r.top+r.bottom)/2-line);if(d===0&&dd<bd){bd=dd;best=i}});
+  const inView=document.getElementById('scrolly1').getBoundingClientRect();
+  if(inView.top>vh*.9)best=-1;
+  if(best!==cur){cur=best;steps.forEach((s,i)=>s.classList.toggle('active',i===best));
+    if(best>=0)q1.setScene(scenes[best]);else q1.setScene({show:[],m:0,ms:400})}
+}
+addEventListener('scroll',()=>{if(!ticking){ticking=true;requestAnimationFrame(pick)}},{passive:true});
+addEventListener('resize',pick);pick();
+
+/* ---------- Q2 dot plot ---------- */
+(()=>{
+  const body=document.getElementById('dpBody'),RH=innerWidth<=860?50:56,ZMAX=7,THR=2.58;
+  body.style.setProperty('--rh',RH+'px');body.style.height=RH*10+'px';
+  const rows={};
+  const wrapTrack=document.createElement('div');
+  ALL.slice().forEach(c=>{
+    const q=D.q1[c],r=document.createElement('div');r.className='dp-row'+(q.z<-THR?' sig':'');
+    r.innerHTML=`<span class="nm">${c}<small>${cls(c)}</small></span><span class="dp-track"><span class="dp-dot" style="left:0;width:0;height:0;background:${COL[c]};opacity:0" tabindex="0" aria-label="${c}: S ${q.S}, z ${q.z}, p ${q.p}"></span></span><span class="r">${fmt(q.z,2)}</span><span class="r">${fmt(q.S)}</span><span class="r p">${q.p<0.0015?'0.001':q.p.toFixed(3)}</span>`;
+    body.appendChild(r);rows[c]=r;
+    const dot=r.querySelector('.dp-dot');
+    dot.addEventListener('pointermove',e=>showTip(e.clientX,e.clientY,`${c}, ${cls(c)}<small>S = ${fmt(q.S)}, z = ${fmt(q.z,2)}, one-sided p = ${q.p<0.0015?'0.001 (floor 1/1001)':q.p.toFixed(3)}</small>`));
+    dot.addEventListener('pointerleave',hideTip);
+  });
+  /* ticks, threshold overlay aligned to the track column */
+  const first=rows[ALL[0]].querySelector('.dp-track');
+  const ov=document.createElement('div');ov.className='dp-ticks';ov.style.cssText='position:absolute;top:0;bottom:0;pointer-events:none';
+  body.insertBefore(ov,body.firstChild);
+  function layoutOverlay(){
+    const tr=rows[ALL[0]].querySelector('.dp-track').getBoundingClientRect(),br=body.getBoundingClientRect();
+    ov.style.left=(tr.left-br.left)+'px';ov.style.width=tr.width+'px';ov.innerHTML='';
+    for(let z=0;z<=ZMAX;z++){const i=document.createElement('i');i.style.left=z/ZMAX*100+'%';ov.appendChild(i);const b=document.createElement('b');b.style.left=z/ZMAX*100+'%';b.textContent=z;ov.appendChild(b)}
+    const t=document.createElement('div');t.className='dp-thr';t.style.left=THR/ZMAX*100+'%';t.innerHTML='<span>Bonferroni (one-sided), |z| = 2.58</span>';ov.appendChild(t);
+    return tr.width;
+  }
+  let key='S',shown=false;
+  function place(animate){
+    const order=ALL.slice().sort((a,b)=>key==='S'?D.q1[a].S-D.q1[b].S:D.q1[a].z-D.q1[b].z);
+    const w=layoutOverlay();
+    order.forEach((c,i)=>{const r=rows[c];r.style.transform=`translateY(${i*RH}px)`;
+      if(shown){const q=D.q1[c],d=r.querySelector('.dp-dot'),size=10+Math.sqrt(Math.abs(q.S))*11;
+        d.style.left=Math.abs(q.z)/ZMAX*100+'%';d.style.width=d.style.height=size+'px';d.style.opacity=1}});
+  }
+  document.querySelectorAll('.dp-ctl button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('.dp-ctl button').forEach(x=>x.setAttribute('aria-pressed',x===b));key=b.dataset.k;place()}));
+  place();
+  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting&&!shown){shown=true;
+    ALL.forEach((c,i)=>setTimeout(()=>{const q=D.q1[c],d=rows[c].querySelector('.dp-dot'),size=10+Math.sqrt(Math.abs(q.S))*11;
+      d.style.left=Math.abs(q.z)/ZMAX*100+'%';d.style.width=d.style.height=size+'px';d.style.opacity=1},RM?0:i*90));io.disconnect()}},{threshold:.35});
+  io.observe(body);
+  addEventListener('resize',()=>place());
+})();
+
+/* ---------- Yearly heat strip ---------- */
+(()=>{
+  const root=document.getElementById('heat');const years=[];for(let y=1982;y<=2017;y++)years.push(y);
+  const rowsOrder=ALL;let W=0;
+  function color(v){if(v===null)return null;const t=clamp(v/6,-1,1);
+    const lerp=(a,b,k)=>a.map((x,i)=>Math.round(x+(b[i]-x)*k));
+    const z=[26,36,51],neg=[240,178,74],negm=[107,74,31],pos=[111,154,214],posm=[43,74,115];
+    if(t<0){const k=-t;return k<.5?`rgb(${lerp(z,negm,k*2)})`:`rgb(${lerp(negm,neg,(k-.5)*2)})`}
+    return t<.5?`rgb(${lerp(z,posm,t*2)})`:`rgb(${lerp(posm,pos,(t-.5)*2)})`}
+  function build(){
+    W=root.clientWidth;const lw=58,rw=innerWidth<=860?40:84,top=30,rh=innerWidth<=860?22:28,gap=18;
+    const H=top+rh*10+gap+6,cw=(W-lw-rw)/years.length;
+    root.innerHTML='';const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':'Yearly cumulative leverage S by instrument and calendar year'},root);
+    years.forEach((y,i)=>{if(y%5===0||y===1982){const t=el('text',{x:lw+i*cw+cw/2,y:top-10,'text-anchor':'middle'},svg);t.textContent=y}});
+    const h=el('text',{x:W-4,y:top-10,'text-anchor':'end'},svg);h.textContent=innerWidth<=860?'neg.':'years with S<0';
+    rowsOrder.forEach((c,r)=>{
+      const y0=top+r*rh+(r>=5?gap:0);
+      const t=el('text',{x:lw-10,y:y0+rh/2+4,'text-anchor':'end','font-weight':500,style:`fill:${COL[c]}`},svg);t.textContent=c;
+      years.forEach((yr,i)=>{const v=D.yearly[c][yr];const col=color(v===undefined?null:v);
+        const rc=el('rect',{x:lw+i*cw+.5,y:y0+.5,width:Math.max(cw-1,1),height:rh-1,rx:1.5,fill:col||'none',class:'c'},svg);
+        if(!col){rc.setAttribute('stroke','#2a3a4c');rc.setAttribute('stroke-opacity',.25);rc.setAttribute('stroke-dasharray','1 3')}
+        else{rc.addEventListener('pointermove',e=>{svg.querySelectorAll('rect.c').forEach(x=>x.style.opacity=x===rc?1:.55);showTip(e.clientX,e.clientY-4,`${c}, ${yr}<small>S = ${fmt(v,2)}${v<0?', leverage effect':''}</small>`)});
+          rc.addEventListener('pointerleave',()=>{svg.querySelectorAll('rect.c').forEach(x=>x.style.opacity=1);hideTip()})}
+        if(!RM&&col){rc.style.opacity=0;rc.style.transition='opacity .5s '+(i*18+r*22)+'ms'}
+        rc._rev=true});
+      const p=el('text',{x:W-4,y:y0+rh/2+4,'text-anchor':'end','font-weight':500,style:`fill:${EQ.includes(c)?'#f0b24a':'#93a0ae'}`},svg);p.textContent=Math.round(D.stab[c])+'%';
+    });
+    const lab=el('text',{x:lw,y:top+rh*5+gap/2+3,'font-size':10},svg);
+    if(!RM){const io=new IntersectionObserver(es=>{if(es[0].isIntersecting){svg.querySelectorAll('rect.c').forEach(r=>r.style.opacity=1);io.disconnect()}},{threshold:.25});io.observe(svg)}
+  }
+  build();let lw0=root.clientWidth;new ResizeObserver(()=>{if(root.clientWidth!==lw0){lw0=root.clientWidth;build()}}).observe(root);
+})();
+
+/* ---------- Strategy chart ---------- */
+(()=>{
+  const MODELS=[['Trailing vol','#93a0ae'],['HAR','#5fb3a6'],['HAR-lev','#b48ad8'],['HAR-trend','#f4f0e4'],
+    ['H1 sleeve risk parity','#e8a15a'],['H2 variance-managed','#e06c75'],['H3 bias-corrected HAR','#7aa2f7'],['H4 ensemble HAR/HAR-lev','#c3e88d'],['H5 asymmetric min(HAR, HAR-lev)','#f78fb3']];
+  const RES=n=>/^H\d /.test(n);
+  const LABEL={'H1 sleeve risk parity':'H1 risk parity','H2 variance-managed':'H2 variance-managed','H3 bias-corrected HAR':'H3 bias-corrected','H4 ensemble HAR/HAR-lev':'H4 ensemble','H5 asymmetric min(HAR, HAR-lev)':'H5 asymmetric'};
+  const lab=n=>LABEL[n]||n;
+  let book='ALL',on={ 'Trailing vol':true,HAR:true,'HAR-lev':true,'HAR-trend':true};
+  MODELS.filter(m=>RES(m[0])).forEach(m=>on[m[0]]=false);
+  const root=document.getElementById('sChart'),chips=document.getElementById('modelChips'),rchips=document.getElementById('researchChips'),tb=document.querySelector('#stats tbody');
+  const parseD=s=>Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10));
+  MODELS.forEach(([n,c])=>{const b=document.createElement('button');b.className='chip';b.dataset.m=n;b.setAttribute('aria-pressed',on[n]);b.innerHTML=`<i style="background:${c}"></i>${lab(n)}`;
+    b.addEventListener('click',()=>{on[n]=!on[n];render(false)});(RES(n)?rchips:chips).appendChild(b)});
+  document.querySelectorAll('#bookSeg button').forEach(b=>b.addEventListener('click',()=>{book=b.dataset.b;document.querySelectorAll('#bookSeg button').forEach(x=>x.setAttribute('aria-pressed',x===b));render(true)}));
+  let W=0,geom;
+  function render(redraw){
+    const avail=MODELS.filter(([n])=>D.strat[book+'|'+n]);
+    document.querySelectorAll('#modelChips .chip,#researchChips .chip').forEach(b=>{const ok=!!D.strat[book+'|'+b.dataset.m];b.disabled=!ok;b.title=ok?'':(RES(b.dataset.m)?'Not defined for this book: same as HAR, or all-legs only':'For bonds, HAR-lev sizing is identical to HAR');b.setAttribute('aria-pressed',ok&&on[b.dataset.m])});
+    document.getElementById('bdnote').hidden=(book!=='BD');
+    // stats
+    const vis=avail.filter(([n])=>on[n]);const best=Math.max(...vis.map(([n])=>D.strat[book+'|'+n].stats.sharpe));
+    tb.innerHTML=vis.map(([n,c])=>{const s=D.strat[book+'|'+n].stats;return `<tr class="${s.sharpe===best&&vis.length>1?'best':''}"><td><i style="background:${c}"></i>${lab(n)}</td><td>${fmt(s.ann_ret_pct,2)}</td><td>${fmt(s.ann_vol_pct,2)}</td><td class="sh">${fmt(s.sharpe,3)}</td><td>${fmt(s.max_dd_pct,1)}</td><td>${n==='HAR'?'baseline':(D.sig[book+'|'+n]?fmt(D.sig[book+'|'+n].p,3):'–')}</td></tr>`}).join('')||'<tr><td colspan="6">Select at least one model.</td></tr>';
+    if(redraw||!geom||root.clientWidth!==W)build(redraw);else{root.querySelectorAll('.sl').forEach(p=>p.style.opacity=on[p.dataset.m]?1:0);}
+  }
+  function build(animate){
+    W=root.clientWidth;const H=Math.round(clamp(W*.62,280,520)),mg={l:50,r:12,t:12,b:30};
+    const keys=MODELS.map(([n])=>book+'|'+n).filter(k=>D.strat[k]);
+    let lo=0,hi=0;keys.forEach(k=>D.strat[k].cum.forEach(v=>{lo=Math.min(lo,v*100);hi=Math.max(hi,v*100)}));
+    const t0=parseD('1995-01-01'),t1=parseD('2017-12-31');
+    const xs=t=>mg.l+(t-t0)/(t1-t0)*(W-mg.l-mg.r),ys=v=>mg.t+(hi*1.05-v)/(hi*1.05-lo*1.1)*(H-mg.t-mg.b);
+    root.innerHTML='';const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':'Cumulative net P&L of the sizing models, 1995 to 2017'},root);
+    niceTicks(lo*1.1,hi*1.05,5).forEach(v=>{el('line',{x1:mg.l,x2:W-mg.r,y1:ys(v),y2:ys(v),class:v===0?'zero':'grid'},svg);const t=el('text',{x:mg.l-8,y:ys(v)+4,'text-anchor':'end'},svg);t.textContent=(v>0?'+':v<0?'−':'')+Math.abs(v)+'%'});
+    for(let y=1995;y<=2015;y+=5){const x=xs(Date.UTC(y,0,1));el('line',{x1:x,x2:x,y1:mg.t,y2:H-mg.b,class:'grid'},svg);const t=el('text',{x,y:H-8,'text-anchor':'middle'},svg);t.textContent=y}
+    const lines={};
+    MODELS.forEach(([n,c])=>{const k=book+'|'+n,s=D.strat[k];if(!s)return;
+      let d='';s.dates.forEach((dt,i)=>{d+=(i?'L':'M')+xs(parseD(dt)).toFixed(1)+' '+ys(s.cum[i]*100).toFixed(1)});
+      const p=el('path',{d,stroke:c,'stroke-width':n==='HAR-trend'?2.4:(RES(n)?1.4:1.7),class:'sl',pathLength:1,'data-m':n},svg);
+      if(!animate||RM)p.style.animation='none';p.style.opacity=on[n]?1:0;p.style.animationDelay=(MODELS.findIndex(m=>m[0]===n)*120)+'ms';lines[n]=p});
+    const cross=el('line',{y1:mg.t,y2:H-mg.b,stroke:'#e9e5da','stroke-opacity':.5,opacity:0},svg);
+    const dots={};MODELS.forEach(([n,c])=>{dots[n]=el('circle',{r:4,fill:c,stroke:'#0e1722','stroke-width':1.5,opacity:0},svg)});
+    geom={};
+    svg.addEventListener('pointermove',e=>{
+      const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width),tt=t0+(px-mg.l)/(W-mg.l-mg.r)*(t1-t0);
+      const ref=D.strat[keys[0]].dates;let lo2=0,hi2=ref.length-1;while(hi2-lo2>1){const m=(lo2+hi2)>>1;parseD(ref[m])<tt?lo2=m:hi2=m}
+      const i=Math.abs(parseD(ref[lo2])-tt)<Math.abs(parseD(ref[hi2])-tt)?lo2:hi2;const x=xs(parseD(ref[i]));
+      if(px<mg.l||px>W-mg.r){cross.setAttribute('opacity',0);Object.values(dots).forEach(d=>d.setAttribute('opacity',0));hideTip();return}
+      cross.setAttribute('x1',x);cross.setAttribute('x2',x);cross.setAttribute('opacity',1);
+      let html=`<b>${ref[i]}</b><small>`;
+      MODELS.forEach(([n,c])=>{const s=D.strat[book+'|'+n];if(!s||!on[n]){dots[n].setAttribute('opacity',0);return}
+        const v=s.cum[Math.min(i,s.cum.length-1)]*100;dots[n].setAttribute('cx',x);dots[n].setAttribute('cy',ys(v));dots[n].setAttribute('opacity',1);
+        html+=`<span style="color:${c==='#f4f0e4'?'#1a2433':c}">●</span> ${lab(n)}: ${v>=0?'+':'−'}${Math.abs(v).toFixed(1)}%<br>`});
+      showTip(Math.min(Math.max(e.clientX,80),innerWidth-80),e.clientY-6,html+'</small>');
+    });
+    svg.addEventListener('pointerleave',()=>{cross.setAttribute('opacity',0);Object.values(dots).forEach(d=>d.setAttribute('opacity',0));hideTip()});
+  }
+  (()=>{const rt=document.querySelector('#rstats tbody');
+    rt.innerHTML=['HAR',...MODELS.filter(m=>RES(m[0])).map(m=>m[0])].map(n=>{const s=D.strat['ALL|'+n].stats,r=D.research[n],c=(MODELS.find(m=>m[0]===n)||[0,'#5fb3a6'])[1];
+      return `<tr><td><i style="background:${c}"></i>${n==='HAR'?'HAR (baseline)':lab(n)}</td><td class="sh">${fmt(s.sharpe,3)}</td><td>${fmt(s.max_dd_pct,1)}</td><td>${fmt(r.turnover,2)}</td><td>${fmt(r.sh1,3)}</td><td>${fmt(r.sh2,3)}</td><td>${fmt(r.sh_cost2,3)}</td><td>${n==='HAR'?'–':fmt(r.p,3)}</td><td>${n==='HAR'?'–':fmt(r.p_holm,3)}</td></tr>`}).join('')})();
+  let started=false;
+  const io=new IntersectionObserver(es=>{if(es[0].isIntersecting&&!started){started=true;render(true);io.disconnect()}},{threshold:.2});
+  render(false);root.innerHTML='';io.observe(root);
+  let w0=root.clientWidth;new ResizeObserver(()=>{if(started&&root.clientWidth!==w0){w0=root.clientWidth;render(false)}}).observe(root);
+})();
+})();
+</script>
+</body>
+</html>
