@@ -58,9 +58,18 @@ All five equity indices reject the null of no leverage effect (Bonferroni thresh
 | Trailing vol | ALL | 4.14 | 4.52 | 0.916 | -14.9 |
 | HAR | ALL | 4.28 | 4.20 | 1.018 | -11.0 |
 | HAR-lev | ALL | 4.18 | 4.23 | 0.990 | -10.6 |
-| HAR-trend | ALL | 3.30 | 3.17 | 1.044 | -6.9 |
+| HAR-trend | ALL | 3.30 | 3.16 | 1.044 | -6.9 |
+| *H1 sleeve risk parity (research, not adopted)* | ALL | 3.61 | 3.89 | 0.928 | -12.6 |
+| *H2 variance-managed (research, not adopted)* | ALL | 5.29 | 5.27 | 1.004 | -12.4 |
+| *H3 bias-corrected HAR (research, not adopted)* | ALL | 4.23 | 4.31 | 0.980 | -11.6 |
+| *H4 ensemble HAR/HAR-lev (research, not adopted)* | ALL | 4.24 | 4.21 | 1.007 | -10.8 |
+| *H5 asymmetric min(HAR, HAR-lev) (research, not adopted)* | ALL | 4.26 | 4.29 | 0.994 | -11.1 |
+
+The italic rows come from the follow-up study in `notebooks/02_strategy_improvements.ipynb` (see Strategy research below); the rows above them are the original study.
 
 Forecast accuracy (QLIKE, lower is better) improves from trailing vol to HAR (equities 0.518 to 0.397, bonds 0.400 to 0.342; Diebold-Mariano p < 1e-10) and again with leverage terms for equities (HAR-lev 0.385, p = 1.1e-8). Better forecasts do not translate into significantly better P&L: HAR vs trailing vol on ALL Sharpe has bootstrap p = 0.055, HAR-lev scores below HAR (p = 0.030), and HAR-trend vs HAR has p = 0.86. Most of the Sharpe comes from bonds and the negative equity-bond correlation (-0.26).
+
+**Strategy research.** A follow-up asked whether the findings above can improve the HAR book: five hypotheses (sleeve-level risk parity with a lagged stock-bond correlation, variance-managed scaling, walk-forward bias-corrected HAR, a HAR/HAR-lev ensemble, an asymmetric equity sizing rule) were written down and committed before any was run (`docs/STRATEGY_RESEARCH.md`, Part 1), then tested with the same walk-forward design, costs, band and 1995 start. None beats HAR (ALL Sharpe 1.018): the best variant scores 1.007, no block-bootstrap p-value survives Holm correction (smallest adjusted p = 0.155), and none wins in both sub-periods or at doubled costs. The Deflated Sharpe Ratio (N = 40 trials) is 1.000 for every strategy, baseline included, so it does not separate them. HAR stays the baseline and no "v2" is adopted; the results show no evidence of improvement, not proof that none exists.
 
 ![Cumulative P&L, all legs, by sizing model](assets/strategy_cumulative_pnl.png)
 
@@ -71,10 +80,14 @@ Forecast accuracy (QLIKE, lower is better) improves from trailing vol to HAR (eq
 ```
 .
 ├── notebooks/
-│   └── leverage_effect.ipynb   # full study with stored outputs
+│   ├── leverage_effect.ipynb   # full study with stored outputs
+│   └── 02_strategy_improvements.ipynb  # strategy research: 5 pre-registered variants vs the HAR baseline
+├── src/
+│   └── strategy.py             # reusable Q5 pipeline: baseline, variants, bootstrap, Holm, Deflated Sharpe
 ├── data/                       # INST0-INST9.csv: daily returns, columns date,return, no header
 ├── docs/
-│   └── NOTES.md                # methodology notes and design choices
+│   ├── NOTES.md                # methodology notes and design choices
+│   └── STRATEGY_RESEARCH.md    # pre-registration and results of the strategy research
 ├── assets/                     # figures extracted from the notebook outputs
 ├── requirements.txt
 └── README.md
@@ -92,6 +105,8 @@ jupyter lab notebooks/leverage_effect.ipynb
 ```
 
 The notebook reads the data via the relative path `../data/`, which resolves correctly when Jupyter opens it from `notebooks/`. Stored outputs are included, so it can be read without re-running.
+
+The strategy research notebook imports `src/strategy.py` (relative path `../src`) and first asserts that the baseline reproduces the Q5 table above exactly. It was executed with pandas 3.0, so the pinned pandas 1.5.3 in `requirements.txt` was not used for it; the original notebook uses `groupby(axis=1)` and needs pandas < 3.
 
 ## Method
 

@@ -54,3 +54,80 @@ Multiple-testing control:
 ### 1.5 What will not be done
 
 No re-tuning of any constant above after seeing results, no extra hypotheses, no dropping of losers from the report, no changes to the baseline, start year, costs or band.
+
+---
+
+## Part 2: Results
+
+Produced by `notebooks/02_strategy_improvements.ipynb` (code in `src/strategy.py`). The baseline was first reproduced exactly: all 11 rows of the README Q5 table plus turnover (ALL HAR 2.582) and the HAR-trend bootstrap p (0.86) match the original notebook. One README figure was corrected: ALL HAR-trend vol is 3.16 (unrounded 3.1645), not 3.17.
+
+### 2.1 ALL book, net of costs, 1995-2017 (all five hypotheses reported)
+
+| Strategy | Ann. return % | Ann. vol % | Sharpe | Max DD % | Turnover | Vol of vol % | p vs HAR | p Holm |
+|---|---|---|---|---|---|---|---|---|
+| HAR (baseline) | 4.28 | 4.20 | 1.018 | -11.0 | 2.58 | 0.98 | | |
+| H1 sleeve risk parity | 3.61 | 3.89 | 0.928 | -12.6 | 4.51 | 0.71 | 0.076 | 0.304 |
+| H2 variance-managed | 5.29 | 5.27 | 1.004 | -12.4 | 13.22 | 1.50 | 0.857 | 0.857 |
+| H3 bias-corrected HAR | 4.23 | 4.31 | 0.980 | -11.6 | 3.39 | 0.96 | 0.083 | 0.304 |
+| H4 ensemble HAR/HAR-lev | 4.24 | 4.21 | 1.007 | -10.8 | 3.10 | 0.99 | 0.305 | 0.610 |
+| H5 asymmetric min(HAR, HAR-lev) | 4.26 | 4.29 | 0.994 | -11.1 | 2.77 | 1.00 | 0.031 | 0.155 |
+
+p-values: 21-day block bootstrap, 1000 resamples, two-sided, vs HAR. H5's raw p = 0.031 is for a Sharpe that is lower than HAR's, so it is evidence of a worse variant, and it does not survive Holm.
+
+### 2.2 Robustness
+
+| Strategy | Sharpe 1995-2006 | Sharpe 2007-2017 | Sharpe, costs x2 | Max DD %, costs x2 |
+|---|---|---|---|---|
+| HAR (baseline) | 1.045 | 0.992 | 1.014 | -11.0 |
+| H1 | 0.904 | 0.954 | 0.921 | -12.6 |
+| H2 | 1.102 | 0.883 | 0.989 | -12.5 |
+| H3 | 1.004 | 0.958 | 0.975 | -11.6 |
+| H4 | 1.037 | 0.976 | 1.002 | -10.8 |
+| H5 | 1.017 | 0.973 | 0.990 | -11.1 |
+
+### 2.3 Deflated Sharpe Ratio
+
+DSR (N = 40, with sensitivity at N = 6 and N = 100) equals 1.000 for every strategy including the baseline. The cross-trial variance of daily Sharpe ratios across these six strategies is tiny (annualised sd 0.032), so the best-of-N benchmark SR0 is far below a Sharpe near 1 measured on about 5,900 daily returns. The pre-registered DSR criterion is therefore met by all variants and does not discriminate; it says that each strategy's Sharpe is positive after accounting for selection, not that it beats HAR. The decision rests on the bootstrap, Holm and robustness criteria.
+
+### 2.4 Pre-registered adoption rule
+
+| Variant | Holm p < 0.05 | DSR >= 0.95 | Better 1995-2006 | Better 2007-2017 | Better at costs x2 | Max DD within 2pp | Adopt |
+|---|---|---|---|---|---|---|---|
+| H1 | no | yes | no | no | no | yes | no |
+| H2 | no | yes | yes | no | no | yes | no |
+| H3 | no | yes | no | no | no | yes | no |
+| H4 | no | yes | no | no | no | yes | no |
+| H5 | no | yes | no | no | no | yes | no |
+
+### 2.5 Equity and bond books (context, not part of the decision rule)
+
+| Book | Strategy | Sharpe | Max DD % | p vs HAR |
+|---|---|---|---|---|
+| EQ | HAR | 0.227 | -43.0 | |
+| EQ | H2 | 0.269 | -40.2 | 0.556 |
+| EQ | H3 | 0.198 | -48.1 | 0.193 |
+| EQ | H4 | 0.213 | -43.5 | 0.314 |
+| EQ | H5 | 0.211 | -45.3 | 0.192 |
+| BD | HAR | 0.926 | -20.0 | |
+| BD | H2 | 0.877 | -34.2 | 0.373 |
+| BD | H3 | 0.922 | -20.5 | 0.646 |
+
+(H4 and H5 leave bonds on HAR; H1 is defined for ALL only.)
+
+### 2.6 Diagnostics
+
+- Mincer-Zarnowitz slope of the baseline walk-forward forecasts over 1995-2017: equities 1.393 (intercept -0.480), bonds 0.952. The "slope 1.4" recorded in NOTES.md is an equity feature, and it reproduces here. The walk-forward correction H3 used had equity slopes of 1.39 to 1.70 across years; bond slopes were 0.91 to 1.02 from 1999.
+- H1 sleeve multipliers relative to the baseline: EQ mean 1.029 (5%-95%: 0.871-1.208), BD mean 0.904 (0.554-1.131).
+
+### 2.7 Conclusion
+
+Nothing beats the baseline. No variant has a higher ALL Sharpe than HAR (best: H4 1.007), none has a Holm-adjusted p below 0.155, none beats HAR at doubled costs, and none is better in both sub-periods, so no "v2" is adopted. The recommendation is to keep the HAR baseline.
+
+Reading by hypothesis:
+
+- **H1** reduces vol and vol of vol (0.71 vs 0.98) but gives up return, and its daily-changing multipliers raise turnover from 2.6 to 4.5.
+- **H2** takes more risk for proportionally more return (Sharpe unchanged within noise), at 5 times the turnover and a -34% bond-book drawdown.
+- **H3**: the equity forecasts are indeed biased (slope 1.4) and the correction is stable, yet better-calibrated forecasts again do not improve P&L (EQ Sharpe 0.198 vs 0.227). This repeats the study's finding that forecast accuracy and Sharpe diverge.
+- **H4, H5**: both mix in HAR-lev, which the study had already found to score below HAR as a sizing model; mixing it in dilutes HAR toward that result.
+
+Limits: one 23-year sample, a handful of sleeves, and five hypotheses fixed in advance. These results show no evidence of improvement, not proof that none exists. The hypotheses were fixed, and committed, before any variant ran; the only change after the pre-registration commit was the README correction above (3.17 to 3.16), made while reproducing the baseline.
