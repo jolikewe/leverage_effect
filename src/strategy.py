@@ -39,7 +39,7 @@ def load_returns(data_dir) -> pd.DataFrame:
     data_dir = Path(data_dir)
     raw = pd.concat(
         {c: pd.read_csv(data_dir / f"{c}.csv", header=None, index_col=0, parse_dates=True)[1] for c in INSTRUMENTS},
-        axis=1,
+        axis=1, sort=True,
     ).rename_axis("date")
     next_weekday = raw.index.to_series().where(raw.index.dayofweek < 5).bfill()
     returns = (1 + raw).groupby(next_weekday).prod(min_count=1) - 1
